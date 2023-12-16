@@ -1,11 +1,11 @@
-package learn.springBoot.contactapi.ContactService;
+package learn.springBoot.contactapi.service;
 
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.Optional;
-//import java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -14,10 +14,12 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import jakarta.transaction.Transactional;
 import learn.springBoot.contactapi.domain.Contact;
 import learn.springBoot.contactapi.repo.ContactRepo;
+import learn.springBoot.contactapi.constant.Constant;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -26,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @Transactional
 @RequiredArgsConstructor
 public class ContactService {
+
     private final ContactRepo contactRepo;
 
     public Page<Contact> getAllContacts(int page, int size) {
@@ -41,6 +44,7 @@ public class ContactService {
     }
 
     public void deleteContact(String id) {
+        // Consider refactoring this method
         Contact contact = getContact(id);
         contactRepo.deleteById(contact.getId());
     }
@@ -53,17 +57,25 @@ public class ContactService {
         return photoUrl;
     }
 
-    private final Function<String, String> fileExtension = filename -> Optional.of(filename).filter(name -> name.contains("."))
+    private final Function<String, String> fileExtension = filename -> Optional.of(filename)
+            .filter(name -> name.contains("."))
             .map(name -> "." + name.substring(filename.lastIndexOf(".") + 1)).orElse(".png");
 
     private final BiFunction<String, MultipartFile, String> photoFunction = (id, image) -> {
+        String filename = id + fileExtension.apply(image.getOriginalFilename());
         try {
-            Path fileStoregeLocation = Paths.get("").toAbsolutePath().normalize();
-            if(!Files.exists(fileStoregeLocation)) { Files.createDirectories(fileStoregeLocation); }
-            Files.copy(image.getInputStream(), fileStoregeLocation.resolve(id + fileExtension.apply(image.getOriginalFilename())), StandardCopyOption.REPLACE_EXISTING);
+            Path fileStoregeLocation = Paths.get(Constant.PHOTO_DIRECTORY).toAbsolutePath().normalize();
+            if (!Files.exists(fileStoregeLocation)) {
+                Files.createDirectories(fileStoregeLocation);
+            }
+            Files.copy(image.getInputStream(),
+                    fileStoregeLocation.resolve(filename),
+                    StandardCopyOption.REPLACE_EXISTING);
+            return ServletUriComponentsBuilder
+                    .fromCurrentContextPath()
+                    .path("/contacts/image/" + filename).toUriString();
         } catch (Exception e) {
             throw new RuntimeException("Unable to save image");
         }
-        return id;
     };
 }
