@@ -35,7 +35,7 @@ public class ContactService {
     }
 
     public Contact getContact(String id) {
-        return contactRepo.findById(id).orElseThrow(() -> new RuntimeException("Contact not found"));
+        return contactRepo.findById(id).orElseThrow(() -> new RuntimeException("Contact not exist with id: " + id));
     }
 
     public Contact createContact(Contact contact) {
