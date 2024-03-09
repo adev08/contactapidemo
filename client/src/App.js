@@ -2,7 +2,11 @@ import React, { useRef } from "react";
 import "./App.css";
 import Header from "./components/Header";
 import ContactList from "./components/ContactList";
-import { getContacts } from "./api/ContactService";
+import {
+  getContacts,
+  saveContact,
+  updatePhoto,
+} from "./api/ContactService";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 function App() {
@@ -12,22 +16,44 @@ function App() {
   const [currentPage, setCurrentPage] = React.useState(0);
   const [file, setFile] = React.useState(undefined);
   const [values, setValues] = React.useState({
-    name: '',
-    email: '',
-    phone: '',
-    address: '',
-    title: '',
-    status: '',
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    title: "",
+    status: "",
   });
 
   const onChange = (event) => {
-    setValues({...values, [event.target.name]: event.target.value});
+    setValues({ ...values, [event.target.name]: event.target.value });
     console.log(values);
   };
 
- const handleNewContact = () => {
-
- };
+  const handleNewContact = async (event) => {
+    event.preventDefault();
+    try {
+      const { data } = await saveContact(values);
+      const formData = new FormData();
+      formData.append("file", file, file.name);
+      formData.append("id", data.id);
+      const { data: photoUrl } = await updatePhoto(formData);
+      toggleModal(false);
+      console.log(photoUrl);
+      setFile(undefined);
+      fileRef.current.value = null;
+      setValues({
+        name: "",
+        email: "",
+        phone: "",
+        address: "",
+        title: "",
+        status: "",
+      });
+      getAllContacts();
+    } catch (error) {
+      console.log(error);
+    }
+  };
 
   const getAllContacts = async (page = 0, size = 10) => {
     try {
@@ -40,7 +66,8 @@ function App() {
     }
   };
 
-  const toggleModal = (show) => show ? modalRef.current.showModal() : modalRef.current.close();
+  const toggleModal = show =>
+    show ? modalRef.current.showModal() : modalRef.current.close();
 
   React.useEffect(() => {
     getAllContacts();
