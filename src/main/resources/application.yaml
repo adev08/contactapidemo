@@ -1,7 +1,7 @@
 ## PostgreSQL
 spring:
   datasource:
-    url: jdbc:postgresql://localhost:5432/postgres?currentShema=demo
+    url: jdbc:postgresql://localhost:5432/postgres?currentSchema=demo
     username: postgres
     password: Welcome1!
   jpa:
